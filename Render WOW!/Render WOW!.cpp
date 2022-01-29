@@ -9,8 +9,6 @@ using std::string;
 #define YSIZE 10
 
 int cameraPos[3] = {5,5,5};
-//Camera is 5 pixels tall and 5 pixels wide
-//
 int worldPos[3] = { 0,0,0 };
 
 
@@ -21,9 +19,9 @@ void clearBuffer()
 
 
 //xzy
-double pixelOne[3] = { 1,3,3 }; //meant to be centered
+double pixelOne[3] = { 1,3,3 }; 
 int dimensions[2] = { XSIZE, YSIZE };
-int cameraDepth = 5; //only view 5 pixels ahead 
+int cameraDepth = 5; //only view 5 pixels ahead, isntr used tho
 char pixel = '=';
 string toColor(int R, int G, int B) { return "\x1B[38;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
 string toBG(int R, int G, int B) { return "\x1B[48;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
