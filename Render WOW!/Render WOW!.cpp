@@ -5,22 +5,19 @@
 #include <chrono> //sleep
 
 using std::string;
-#define XSIZE 10
-#define YSIZE 10
+const int XSIZE = 5; //Camera Width
+const int YSIZE = 5; //Camera Height
 
 int cameraPos[3] = {5,5,5};
+
 int worldPos[3] = { 0,0,0 };
 
 
 //xzy
-<<<<<<< Updated upstream
-double pixelOne[3] = { 1,3,3 }; 
-=======
-double pixelOne[3] = { 5,2,5 }; 
->>>>>>> Stashed changes
+double pixelOne[3] = { 5,2,5 }; //Meant to be centered
 int dimensions[2] = { XSIZE, YSIZE };
-int cameraDepth = 5; //only view 5 pixels ahead, isntr used tho
-char pixel = '=';
+int cameraDepth = 5; //only view 5 pixels ahead 
+char pixel = '[]';
 string toColor(int R, int G, int B) { return "\x1B[38;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
 string toBG(int R, int G, int B) { return "\x1B[48;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
 void clearBuffer()
@@ -52,7 +49,7 @@ int hide(int val, int min, int max) {  //used for limiting values to a range of 
     return val; //if it hasnt done any returning then just return value
 }
 
-int renderBasic(bool clear) {
+int renderBasic(bool clear, bool debugger) {
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
     CONSOLE_CURSOR_INFO cursorInfo;
@@ -62,9 +59,9 @@ int renderBasic(bool clear) {
     SetConsoleCursorInfo(out, &cursorInfo);
     int* camPos = cameraPos;
     double* object = pixelOne;
-    int calculateCamOffset[3];//Calculate how far off the camera is from world center
+    int calculateCamOffset[3];//= {dimensions[0],0,dimensions[2]};//Calculate how far off the camera is from world center
     for (int current = 0; current < 3; current++) {
-        calculateCamOffset[current] = camPos[current] - worldPos[current];
+        calculateCamOffset[current] += camPos[current] - worldPos[current];
 
     }
     //calculateCamOffset[0] += dimensions[0];
@@ -95,12 +92,13 @@ int renderBasic(bool clear) {
     
     int screenSpaceObj[3];
     for (int i = 0; i < 3; i++) {
-        screenSpaceObj[i] = camPos[i] - object[i];
+        screenSpaceObj[i] = ((camPos[i]) - object[i]);
     }
 
-
+    screenSpaceObj[0] += (int)(dimensions[0] / 2);
+    screenSpaceObj[2] += (int)(dimensions[1] / 2);
     screenSpaceObj[1] = clamp(screenSpaceObj[1], 1, 5);
-
+    
     int x = screenSpaceObj[0];
     int depth = screenSpaceObj[1];
     int y = screenSpaceObj[2];
@@ -141,7 +139,7 @@ int renderBasic(bool clear) {
     if we use the formula i made:
     5x(3-1)
     then we get
-    5x2
+    5x3
     so we end up with 10
 
     lets mark position 10 of the string with 1
@@ -164,6 +162,7 @@ int renderBasic(bool clear) {
         std::cout << depthMap[std::stoi(stringify[0])] << pixel;
     }
     std::cout << toBG(0, 0, 0);
+    if (debugger) { std::cout << toColor(250, 250, 250) << screenSpaceObj[0] << ' ' << screenSpaceObj[1] << ' ' << screenSpaceObj[2]; }
     return 1;
 }
 
@@ -190,9 +189,24 @@ int main()
     {
         SetConsoleMode(outputHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     }
+    
+    //Keep in mind that this is a render engine with a game demo.
+    //It is not a game engine, so bounds checking is implemented in int main()
     for (;;) {
         using namespace std;
-        renderBasic(true);
+        renderBasic(true, false);
+
+        int* camPos = cameraPos;
+        double* object = pixelOne;
+
+        int screenSpaceObj[3];
+        for (int i = 0; i < 3; i++) {
+            screenSpaceObj[i] = ((camPos[i]) - object[i]);
+        }
+
+        screenSpaceObj[0] += (int)(dimensions[0] / 2);
+        screenSpaceObj[2] += (int)(dimensions[1] / 2);
+        screenSpaceObj[1] = clamp(screenSpaceObj[1], 1, 5);
 
         if (GetConsoleWindow() == GetForegroundWindow()) {
             if (GetAsyncKeyState(key["s"])) {
@@ -203,23 +217,32 @@ int main()
             }
 
             if (GetAsyncKeyState(key["a"])) {
-                pixelOne[0] = pixelOne[0] + 1;
+                if (screenSpaceObj[0] > 0) { pixelOne[0] = pixelOne[0] + 1; }
+                
             }
             if (GetAsyncKeyState(key["d"])) {
-                pixelOne[0] = pixelOne[0] - 1;
+                if (screenSpaceObj[0] < XSIZE-1) { pixelOne[0] = pixelOne[0] - 1; }
             }
 
 
             if (GetAsyncKeyState(VK_UP)) {
-                pixelOne[2] = pixelOne[2] + 1;
+                if (screenSpaceObj[2] > 0) { pixelOne[2] = pixelOne[2] + 1; }
             }
 
             if (GetAsyncKeyState(VK_DOWN)) {
-                pixelOne[2] = pixelOne[2] - 1;
+                if (screenSpaceObj[2] < YSIZE-1) { pixelOne[2] = pixelOne[2] - 1; }
+            }
+            if (GetAsyncKeyState(VK_LEFT)) {
+                if (screenSpaceObj[0] > 0) { pixelOne[0] = pixelOne[0] + 1; }
+
+            }
+            if (GetAsyncKeyState(VK_RIGHT)) {
+                if (screenSpaceObj[0] < XSIZE - 1) { pixelOne[0] = pixelOne[0] - 1; }
             }
         }
 
         Sleep(50);
+        cout << "";
     }
    
 
