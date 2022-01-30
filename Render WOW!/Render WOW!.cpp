@@ -1,12 +1,12 @@
 ﻿#include <iostream> //io
 #include <map> // map
 #include <string> //string funcs
-#include <Windows.h> //keystate
-#include <chrono> //sleep
+#include <Windows.h>
+
 
 using std::string;
-const int XSIZE = 20; //Camera Width
-const int YSIZE = 10; //Camera Height
+const int XSIZE = 30; //Camera Width
+const int YSIZE = 15; //Camera Height
 
 int cameraPos[3] = {5,5,5};
 
@@ -22,6 +22,7 @@ string toColor(int R, int G, int B) { return "\x1B[38;2;" + std::to_string(R) + 
 string toBG(int R, int G, int B) { return "\x1B[48;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
 void clearBuffer()
 {
+
     std::cout << "\x1B[2J\x1B[H";
 }
 std::map<int, string> depthMap = {
@@ -61,7 +62,7 @@ int renderBasic(bool clear, bool debugger) {
     double* object = pixelOne;
     int calculateCamOffset[3];//= {dimensions[0],0,dimensions[2]};//Calculate how far off the camera is from world center
     for (int current = 0; current < 3; current++) {
-        calculateCamOffset[current] += camPos[current] - worldPos[current];
+        calculateCamOffset[current] = camPos[current] - worldPos[current];
 
     }
     //calculateCamOffset[0] += dimensions[0];
@@ -148,19 +149,25 @@ int renderBasic(bool clear, bool debugger) {
     the formula gives the end of the 3rd Y coordinate in the depth buffer, so we just do some magic MATHEMATICS! with x to get the position of X and Y in the depth buffer
     */
     string bufferMap = "";
+    char buf[655536];
+    //if (clear) {
+    //    clearBuffer();
+    //}
+    //Clearing before the for loop creates a few milliseconds of an empty frame, causing flickering thats more severe than how it currently is
+    for (int j = 0; j < (XSIZE * YSIZE); j++) {
+        string stringify[1];
+        stringify[0] = dMap[j];
+        if (j % XSIZE == 0 && j != 0) {  //j != 0 stops it from making a newline on line 1
+            bufferMap=bufferMap+'\n';
+            //std::cout << '\n';
+        }
+        bufferMap = bufferMap + depthMap[std::stoi(stringify[0])] + pixel;
+        //std::cout << depthMap[std::stoi(stringify[0])] << pixel;
+    }
     if (clear) {
         clearBuffer();
     }
-    for (int j = 0; j < (XSIZE * YSIZE); j++) {
-        if (j % XSIZE == 0) {
-            bufferMap=bufferMap+'\n';
-            std::cout << '\n';
-        }
-        bufferMap = bufferMap + dMap[j];
-        string stringify[1];
-        stringify[0] = dMap[j];
-        std::cout << depthMap[std::stoi(stringify[0])] << pixel;
-    }
+    std::cout << bufferMap;
     std::cout << toBG(0, 0, 0);
     if (debugger) { std::cout << toColor(250, 250, 250) << screenSpaceObj[0] << ' ' << screenSpaceObj[1] << ' ' << screenSpaceObj[2]; }
     return 1;
@@ -192,9 +199,12 @@ int main()
     
     //Keep in mind that this is a render engine with a game demo.
     //It is not a game engine, so bounds checking is implemented in int main()
+    renderBasic(true, false);
+    Sleep(20);
+    renderBasic(true, false);
     for (;;) {
         using namespace std;
-        renderBasic(true, true);
+        
 
         int* camPos = cameraPos;
         double* object = pixelOne;
@@ -211,36 +221,44 @@ int main()
         if (GetConsoleWindow() == GetForegroundWindow()) {
             if (GetAsyncKeyState(key["s"])) {
                 pixelOne[1] = pixelOne[1] - 1;
+                renderBasic(true, false);
             }
             if (GetAsyncKeyState(key["w"])) {
                 pixelOne[1] = pixelOne[1] + 1;
+                renderBasic(true, false);
             }
 
             if (GetAsyncKeyState(key["a"])) {
                 if (screenSpaceObj[0] > 0) { pixelOne[0] = pixelOne[0] + 1; }
+                renderBasic(true, false);
                 
             }
             if (GetAsyncKeyState(key["d"])) {
                 if (screenSpaceObj[0] < XSIZE-1) { pixelOne[0] = pixelOne[0] - 1; }
+                renderBasic(true, false);
             }
 
 
             if (GetAsyncKeyState(VK_UP)) {
                 if (screenSpaceObj[2] > 0) { pixelOne[2] = pixelOne[2] + 1; }
+                renderBasic(true, false);
             }
 
             if (GetAsyncKeyState(VK_DOWN)) {
                 if (screenSpaceObj[2] < YSIZE-1) { pixelOne[2] = pixelOne[2] - 1; }
+                renderBasic(true, false);
             }
             if (GetAsyncKeyState(VK_LEFT)) {
                 if (screenSpaceObj[0] > 0) { pixelOne[0] = pixelOne[0] + 1; }
+                renderBasic(true, false);
 
             }
             if (GetAsyncKeyState(VK_RIGHT)) {
                 if (screenSpaceObj[0] < XSIZE - 1) { pixelOne[0] = pixelOne[0] - 1; }
+                renderBasic(true, false);
             }
         }
-
+        
         Sleep(50);
         cout << "";
     }
@@ -248,3 +266,4 @@ int main()
 
 
 }
+
