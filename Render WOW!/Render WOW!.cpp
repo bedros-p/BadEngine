@@ -12,20 +12,21 @@ int cameraPos[3] = {5,5,5};
 int worldPos[3] = { 0,0,0 };
 
 
-void clearBuffer()
-{
-    std::cout << "\x1B[2J\x1B[H";
-}
-
-
 //xzy
+<<<<<<< Updated upstream
 double pixelOne[3] = { 1,3,3 }; 
+=======
+double pixelOne[3] = { 5,2,5 }; 
+>>>>>>> Stashed changes
 int dimensions[2] = { XSIZE, YSIZE };
 int cameraDepth = 5; //only view 5 pixels ahead, isntr used tho
 char pixel = '=';
 string toColor(int R, int G, int B) { return "\x1B[38;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
 string toBG(int R, int G, int B) { return "\x1B[48;2;" + std::to_string(R) + ";" + std::to_string(G) + ";" + std::to_string(B) + "m"; }
-
+void clearBuffer()
+{
+    std::cout << "\x1B[2J\x1B[H";
+}
 std::map<int, string> depthMap = {
         {0, toColor(0,0,0)},
         {1, toColor(50, 50, 50)},
@@ -51,7 +52,7 @@ int hide(int val, int min, int max) {  //used for limiting values to a range of 
     return val; //if it hasnt done any returning then just return value
 }
 
-int renderBasic() {
+int renderBasic(bool clear) {
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
     CONSOLE_CURSOR_INFO cursorInfo;
@@ -73,7 +74,7 @@ int renderBasic() {
     int clampedDepth = clamp(rawDepth, 1, 5);
 
     std::map<int, string> depthMap = {
-        {0, toBG(0,0,0) + toColor(0,0,0)},
+        {0, toBG(10,10,10) + toColor(10,10,10)},
         {1, toBG(50,50,50) + toColor(50, 50, 50)},
         {2, toBG(100,100,100) + toColor(100, 100, 100)},
         {3, toBG(150,150,150) + toColor(150, 150, 150)},
@@ -149,6 +150,9 @@ int renderBasic() {
     the formula gives the start of the 3rd Y coordinate in the depth buffer, so we just add X to get the position of X and Y in the depth buffer
     */
     string bufferMap = "";
+    if (clear) {
+        clearBuffer();
+    }
     for (int j = 0; j < (XSIZE * YSIZE); j++) {
         if (j % XSIZE == 0) {
             bufferMap=bufferMap+'\n';
@@ -180,38 +184,42 @@ std::map<string, int> key = {
 
 int main()
 {
+    DWORD consoleMode;
+    HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (GetConsoleMode(outputHandle, &consoleMode))
+    {
+        SetConsoleMode(outputHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
     for (;;) {
         using namespace std;
-        renderBasic();
+        renderBasic(true);
 
         if (GetConsoleWindow() == GetForegroundWindow()) {
             if (GetAsyncKeyState(key["s"])) {
-                cameraPos[1] = cameraPos[1] - 1;
+                pixelOne[1] = pixelOne[1] - 1;
             }
             if (GetAsyncKeyState(key["w"])) {
-                cameraPos[1] = cameraPos[1] + 1;
+                pixelOne[1] = pixelOne[1] + 1;
             }
 
             if (GetAsyncKeyState(key["a"])) {
-                cameraPos[0] = cameraPos[0] + 1;
+                pixelOne[0] = pixelOne[0] + 1;
             }
             if (GetAsyncKeyState(key["d"])) {
-                cameraPos[0] = cameraPos[0] - 1;
+                pixelOne[0] = pixelOne[0] - 1;
             }
 
 
             if (GetAsyncKeyState(VK_UP)) {
-                cameraPos[2] = cameraPos[2] + 1;
+                pixelOne[2] = pixelOne[2] + 1;
             }
 
             if (GetAsyncKeyState(VK_DOWN)) {
-                cameraPos[2] = cameraPos[2] - 1;
+                pixelOne[2] = pixelOne[2] - 1;
             }
         }
 
         Sleep(50);
-        
-        clearBuffer();
     }
    
 
