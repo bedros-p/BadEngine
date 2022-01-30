@@ -5,8 +5,8 @@
 #include <chrono> //sleep
 
 using std::string;
-const int XSIZE = 5; //Camera Width
-const int YSIZE = 5; //Camera Height
+const int XSIZE = 20; //Camera Width
+const int YSIZE = 10; //Camera Height
 
 int cameraPos[3] = {5,5,5};
 
@@ -97,12 +97,12 @@ int renderBasic(bool clear, bool debugger) {
 
     screenSpaceObj[0] += (int)(dimensions[0] / 2);
     screenSpaceObj[2] += (int)(dimensions[1] / 2);
-    screenSpaceObj[1] = clamp(screenSpaceObj[1], 1, 5);
+    screenSpaceObj[1] = clamp(screenSpaceObj[1], 1, cameraDepth);
     
     int x = screenSpaceObj[0];
     int depth = screenSpaceObj[1];
     int y = screenSpaceObj[2];
-    if (y <= cameraPos[2]) {
+    if (y <= YSIZE) {
         int yDepthMap = (dimensions[0] * y);//lets multiply the y value by the screen x size to reach y pos in depth buffer
         dMap[yDepthMap + x] = std::to_string(depth)[0];
         if (x<0 || x>=XSIZE) {
@@ -137,15 +137,15 @@ int renderBasic(bool clear, bool debugger) {
     the 3rd byte ends at position 15 of that string, meaning the end of the y3 section is at position 15
 
     if we use the formula i made:
-    5x(3-1)
-    then we get
     5x3
-    so we end up with 10
+    then we get
+    15
+    so we end up with 15
 
     lets mark position 10 of the string with 1
-    00000 00000 10000
-    -- Computers count from 0, so [10] is at 11
-    the formula gives the start of the 3rd Y coordinate in the depth buffer, so we just add X to get the position of X and Y in the depth buffer
+    00000 00000 00001
+    
+    the formula gives the end of the 3rd Y coordinate in the depth buffer, so we just do some magic MATHEMATICS! with x to get the position of X and Y in the depth buffer
     */
     string bufferMap = "";
     if (clear) {
@@ -194,7 +194,7 @@ int main()
     //It is not a game engine, so bounds checking is implemented in int main()
     for (;;) {
         using namespace std;
-        renderBasic(true, false);
+        renderBasic(true, true);
 
         int* camPos = cameraPos;
         double* object = pixelOne;
