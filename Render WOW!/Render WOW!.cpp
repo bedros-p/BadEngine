@@ -1,4 +1,4 @@
-﻿#include <iostream> //io
+#include <iostream> //io
 #include <map> // map
 #include <string> //string funcs
 #include <Windows.h>
@@ -32,15 +32,11 @@ void clearBuffer() //https://www.cplusplus.com/articles/4z18T05o/
 
     hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!GetConsoleScreenBufferInfo(hStdOut, &csbi)) return;
-    cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+    //cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+    //if (!FillConsoleOutputCharacter(hStdOut,(TCHAR)' ',cellCount,homeCoords,&count)) return;
+    //if (!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) { std::cout << toBG(0, 0, 0); return; };
 
-    /* Fill the entire buffer with spaces */
-    if (!FillConsoleOutputCharacter(hStdOut,(TCHAR)' ',cellCount,homeCoords,&count)) return;
-
-    /* Fill the entire buffer with the current colors and attributes */
-    if (!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) { std::cout << toBG(0, 0, 0); return; };
-
-    /* Move the cursor home */
+    /* Move the cursor to start */
     SetConsoleCursorPosition(hStdOut, homeCoords);
 }
 int clamp(int val, int min, int max) {  //used for limiting values to a range of min and max
@@ -78,7 +74,7 @@ int renderBasic(bool clear, bool debugger) {
     std::map<int, std::vector<int>> relativepixelList;
     for (int i = 0; i <= pixelList.size()-1; i++) {
         std::vector<int> object = pixelList[i];
-        std::cout << object[1];
+        if(debugger)std::cout << object[1];
         //int clampedDepth = clamp((int)camPos[1] - object[1], 1, cameraDepth);
         std::vector<int> screenSpaceObj = screenSpace(object);
         relativepixelList[i] = screenSpaceObj;
@@ -161,9 +157,8 @@ int renderBasic(bool clear, bool debugger) {
         bufferMap = bufferMap + depthMap[std::stoi(stringify[0])] + pixel;
     }
     
-    if (clear) {
-        clearBuffer();
-    }
+    if (clear)clearBuffer();
+    
     
     std::cout << bufferMap;
     std::cout << toBG(0, 0, 0);
@@ -199,6 +194,24 @@ int main()
 
 
     std::cout << toColor(255, 0, 0) << "Have !FUN! :)\n";
+    //https://www.cplusplus.com/articles/4z18T05o/
+    
+    DWORD count;
+    DWORD cellCount;
+    COORD homeCoords = { 0, 0 };
+
+    hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (!GetConsoleScreenBufferInfo(hStdOut, &csbi))return 0;
+    cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+
+    /* Fill the entire buffer with spaces */
+    FillConsoleOutputCharacter(hStdOut, (TCHAR)' ', cellCount, homeCoords, &count);
+
+    /* Fill the entire buffer with the current colors and attributes */
+    if (!FillConsoleOutputAttribute(hStdOut, csbi.wAttributes, cellCount, homeCoords, &count)) { std::cout << toBG(0, 0, 0);};
+
+    /* Move the cursor home */
+    SetConsoleCursorPosition(hStdOut, homeCoords);
     Sleep(600);
     std::vector<int> ssPos = screenSpace({ 7,1,7 });
     createPixel(7, 7, 2);
@@ -221,7 +234,7 @@ int main()
         SetConsoleMode(outputHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         CONSOLE_CURSOR_INFO cursorInfo;
         GetConsoleCursorInfo(outputHandle, &cursorInfo);
-        cursorInfo.bVisible = false; // hide cursor
+        cursorInfo.bVisible = false; // hide crappy terminal cursor
         SetConsoleCursorInfo(outputHandle, &cursorInfo);
 
     }
@@ -234,7 +247,8 @@ int main()
         int* camPos = cameraPos;
 
 
-        renderBasic(true, true);
+        renderBasic(true, false);
+        
         if (GetConsoleWindow() == GetForegroundWindow()) {
             if (GetAsyncKeyState(key["s"])) {
                 (*object)[1] = (*object)[1] - 1;
@@ -280,8 +294,16 @@ int main()
         Sleep(15);
 
     } 
-    //If you intend on actually using this library i recommend you get the clearBuffer thing to work without the flickering
-    //It used to work just fine with ANSI escape codes but that broke as soon as I implemented the ability to have more than one object in frame, if you can get it working, I'd highly appreciate a Pull Request with the fix
+    //-If you intend on actually using this library i recommend you get the clearBuffer thing to work without the flickering
+    // 
+    // +NOTE FROM ME!!!
+    // 
+    // +I was just sitting until it finally hit me: Why clear the buffer when instead, i can move the cursor to the start and overwrite the previous frame with the new one? THis would result in ZERO empty frames
+    // +Its much smoother now, and no more flickering
+    // +clearBuffer is now just a function to move the mouse to the start of the screen
+    // +super DUPER! smart
+    //
+    //
     return 0;
 }
 
