@@ -72,65 +72,42 @@ int renderBasic(bool clear, bool debugger) {
 
 
     std::map<int, std::vector<int>> relativepixelList;
+    
     for (int i = 0; i <= pixelList.size()-1; i++) {
+
         std::vector<int> object = pixelList[i];
+        //check if closest pixel
+
+
+
+
         if(debugger)std::cout << object[1];
         //int clampedDepth = clamp((int)camPos[1] - object[1], 1, cameraDepth);
         std::vector<int> screenSpaceObj = screenSpace(object);
         relativepixelList[i] = screenSpaceObj;
         int x = screenSpaceObj[0];
         int depth = screenSpaceObj[1];
+        
         int y = screenSpaceObj[2];
         if (y <= YSIZE) {
             int yDepthMap = (dimensions[0] * y);//lets multiply the y value by the screen x size to reach y pos in depth buffer
-            dMap[yDepthMap + x] = std::to_string(depth)[0];
-            if (x < 0 || x >= XSIZE) {
-                dMap[yDepthMap + x] = '0';
-            }
-            if (y < 0 || y >= YSIZE) {
-                dMap[yDepthMap + y] = '0';
+
+            //OVERLAP FIX
+            if (depth > (dMap[yDepthMap + x] - '0')) {
+                //Thats all it took...
+                dMap[yDepthMap + x] = std::to_string(depth)[0];
+
+                if (x < 0 || x >= XSIZE) {
+                    dMap[yDepthMap + x] = '0';
+                }
+                if (y < 0 || y >= YSIZE) {
+                    dMap[yDepthMap + y] = '0';
+                }
             }
 
         }
 
     }
-
-
-
-
-
-    /*
-    Okay, what in Gods green Earth have I written?
-    here's what's happening:
-
-    depthBuffer is a massive list of 0s
-    a small part of it : 000000000000000
-
-    lets split it up into bits of 5
-
-    00000 00000 00000
-
-    the x size is 5 in this case
-
-    if our y position is 3, then:
-
-    3x5=15
-
-    0000000000000000000000000000
-
-    the 3rd byte ends at position 15 of that string, meaning the end of the y3 section is at position 15
-
-    if we use the formula i made:
-    5x3
-    then we get
-    15
-    so we end up with 15
-
-    lets mark position 10 of the string with 1
-    00000 00000 00001
-
-    the formula gives the end of the 3rd Y coordinate in the depth buffer, so we just do some magic MATHEMATICS! with x to get the position of X and Y in the depth buffer
-    */
     string bufferMap = "";
     //if (clear) {
     //    clearBuffer();
@@ -175,12 +152,22 @@ std::map<string, int> key = {
 
 int main()
 {
+
     HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     if (!GetConsoleScreenBufferInfo(hStdOut, &csbi)) return 1;
     HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD center = { csbi.dwSize.X/2, 10 };
-    
+    DWORD consoleMode;
+    if (GetConsoleMode(outputHandle, &consoleMode))
+    {
+        SetConsoleMode(outputHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        CONSOLE_CURSOR_INFO cursorInfo;
+        GetConsoleCursorInfo(outputHandle, &cursorInfo);
+        cursorInfo.bVisible = false; // hide crappy terminal cursor
+        SetConsoleCursorInfo(outputHandle, &cursorInfo);
+
+    }
     SetConsoleCursorPosition(hStdOut, center);
     std::cout << toColor(255,255,255) << "This is a crappy game!\n";
     SetConsoleCursorPosition(hStdOut, { 0, 11 });
@@ -219,7 +206,7 @@ int main()
 
     //createPixel(ssPos[0]+2, 2, ssPos[2]);
 
-    DWORD consoleMode;
+    
     
 
 
@@ -229,15 +216,7 @@ int main()
         {"left",15},
         {"right", -4}
     };
-    if (GetConsoleMode(outputHandle, &consoleMode))
-    {
-        SetConsoleMode(outputHandle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        CONSOLE_CURSOR_INFO cursorInfo;
-        GetConsoleCursorInfo(outputHandle, &cursorInfo);
-        cursorInfo.bVisible = false; // hide crappy terminal cursor
-        SetConsoleCursorInfo(outputHandle, &cursorInfo);
-
-    }
+    
     //Keep in mind that this is a render engine with a game demo.
     //It's not a game engine, so bounds checking is implemented in int main(). It's not meant to be scaled, it's a game demo, not an actual game.
     std::vector<int> numbers = screenSpace({ 3,3,3 });
